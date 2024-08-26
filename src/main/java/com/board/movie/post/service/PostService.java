@@ -11,9 +11,12 @@ import com.board.movie.post.dto.PostResponseDTO;
 import com.board.movie.post.entity.PostEntity;
 import com.board.movie.post.repository.PostRepository;
 import com.board.movie.user.entity.UserEntity;
+import com.board.movie.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +29,7 @@ import java.util.*;
 public class PostService {
 
   private final PostRepository postRepository;
+  private final UserRepository userRepository;
 
   // 전체 게시글 조회
   @Transactional
@@ -48,9 +52,16 @@ public class PostService {
 
   // 게시글 작성
   @Transactional
-  public ApiResultDTO<PostResponseDTO> createPost(PostRequestDTO.CreatePost postDto, UserEntity user) {
+  public ApiResultDTO<PostResponseDTO> createPost(PostRequestDTO.CreatePost postDto) {
 
-      PostEntity postEntity = postDto.toEntity(user);
+    // 현재 인증된 사용자 정보 가져오기
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String username = authentication.getName();
+
+    UserEntity userEntity = userRepository.findById(username)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+      PostEntity postEntity = postDto.toEntity(userEntity);
       PostEntity savedPostEntity = postRepository.save(postEntity);
       PostResponseDTO postResponseDTO = new PostResponseDTO(savedPostEntity);
       return ApiResult.ok(postResponseDTO);
@@ -58,14 +69,21 @@ public class PostService {
 
   // 게시글 수정
   @Transactional
-  public ApiResultDTO<PostResponseDTO> updatePost(Long postId, PostRequestDTO.UpdatePost postDto, UserEntity user) {
+  public ApiResultDTO<PostResponseDTO> updatePost(Long postId, PostRequestDTO.UpdatePost postDto) {
+
+    // 현재 인증된 사용자 정보 가져오기
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String username = authentication.getName();
+
+    UserEntity userEntity = userRepository.findById(username)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
     // 게시글 조회
     PostEntity postEntity = postRepository.findById(postId)
         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
     // 게시글을 작성한 유저가 맞는지 확인
-    Optional<PostEntity> post = postRepository.findByPostIdAndUser(postId, user);
+    Optional<PostEntity> post = postRepository.findByPostIdAndUser(postId, userEntity);
     if (post.isEmpty()) {
       throw new CustomException(ErrorCode.NOT_WRITER);
     }
@@ -81,14 +99,21 @@ public class PostService {
   }
 
   // 게시글 삭제
-  public ApiResultDTO<SuccessResponse> deletePost(Long postId, UserEntity user) {
+  public ApiResultDTO<SuccessResponse> deletePost(Long postId) {
+
+    // 현재 인증된 사용자 정보 가져오기
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String username = authentication.getName();
+
+    UserEntity userEntity = userRepository.findById(username)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
     // 게시글 조회
     PostEntity postEntity = postRepository.findById(postId)
         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
     // 작성자 확인
-    Optional<PostEntity> post = postRepository.findByPostIdAndUser(postId, user);
+    Optional<PostEntity> post = postRepository.findByPostIdAndUser(postId, userEntity);
     if (post.isEmpty()) {
       throw new CustomException(ErrorCode.NOT_WRITER);
     }

@@ -12,8 +12,11 @@ import com.board.movie.exception.ErrorCode;
 import com.board.movie.post.entity.PostEntity;
 import com.board.movie.post.repository.PostRepository;
 import com.board.movie.user.entity.UserEntity;
+import com.board.movie.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,10 +28,18 @@ public class CommentService {
 
   private final CommentRepository commentRepository;
   private final PostRepository postRepository;
+  private final UserRepository userRepository;
 
   // 댓글 작성
   @Transactional
-  public ApiResultDTO<CommentResponseDTO> createComment(Long postId, CommentRequestDTO.CreateComment commentDto, UserEntity user) {
+  public ApiResultDTO<CommentResponseDTO> createComment(Long postId, CommentRequestDTO.CreateComment commentDto) {
+
+    // 현재 인증된 사용자 정보 가져오기
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String username = authentication.getName();
+
+    UserEntity userEntity = userRepository.findById(username)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
     // 게시글 조회
     PostEntity postEntity = postRepository.findById(postId)
@@ -36,7 +47,7 @@ public class CommentService {
 
     CommentEntity comment = new CommentEntity();
     comment.setContent(commentDto.getContent());
-    comment.setUser(user);
+    comment.setUser(userEntity);
     comment.setPost(postEntity);
 
     commentRepository.save(comment);
@@ -46,13 +57,22 @@ public class CommentService {
   }
 
   // 댓글 수정
-  public ApiResultDTO<CommentResponseDTO> updateComment(Long commentId, CommentRequestDTO.CreateComment commentDto, UserEntity user) {
+  @Transactional
+  public ApiResultDTO<CommentResponseDTO> updateComment(Long commentId, CommentRequestDTO.CreateComment commentDto) {
+
+    // 현재 인증된 사용자 정보 가져오기
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String username = authentication.getName();
+
+    UserEntity userEntity = userRepository.findById(username)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
     // 댓글 조회
     CommentEntity commentEntity = commentRepository.findById(commentId)
         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
     // 댓글 작성한 유저가 맞는지 확인
-    Optional<CommentEntity> comment = commentRepository.findByCommentIdAndUser(commentId, user);
+    Optional<CommentEntity> comment = commentRepository.findByCommentIdAndUser(commentId, userEntity);
     if (comment.isEmpty()) {
       throw new CustomException(ErrorCode.NOT_WRITER);
     }
@@ -62,13 +82,20 @@ public class CommentService {
   }
 
   // 댓글 삭제
-  public ApiResultDTO<SuccessResponse> deleteComment(Long commentId, UserEntity user) {
+  @Transactional
+  public ApiResultDTO<SuccessResponse> deleteComment(Long commentId) {
+    // 현재 인증된 사용자 정보 가져오기
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String username = authentication.getName();
+
+    UserEntity userEntity = userRepository.findById(username)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     // 댓글 조회
     CommentEntity commentEntity = commentRepository.findById(commentId)
         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
     // 댓글 작성한 유저가 맞는지 확인
-    Optional<CommentEntity> comment = commentRepository.findByCommentIdAndUser(commentId, user);
+    Optional<CommentEntity> comment = commentRepository.findByCommentIdAndUser(commentId, userEntity);
     if (comment.isEmpty()) {
       throw new CustomException(ErrorCode.NOT_WRITER);
     }

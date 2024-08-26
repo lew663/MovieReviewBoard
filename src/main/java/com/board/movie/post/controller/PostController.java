@@ -16,44 +16,41 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api")
+@RequestMapping("/api/post")
 public class PostController {
 
   private final PostService postService;
 
   // 전체 게시글 조회
-  @GetMapping("/posts")
+  @GetMapping("/list")
   public ApiResultDTO<List<PostResponseDTO.listPosts>> listPosts() {
     return postService.listPosts();
   }
 
   // 게시글 작성
-  @PostMapping("/post")
+  @PostMapping
   public ApiResultDTO<PostResponseDTO> createPost(
-      @Valid @RequestBody PostRequestDTO.CreatePost postDto,
-      @AuthenticationPrincipal UserDetailsImpl userDetails) {
-    return postService.createPost(postDto, userDetails.getUser());
+      @Valid @RequestBody PostRequestDTO.CreatePost postDto) {
+    return postService.createPost(postDto);
   }
 
   // 게시글 수정
-  @PutMapping("/post/{postId}")
+  @PutMapping("/{postId}")
   public ApiResultDTO<PostResponseDTO> updatePost(
       @PathVariable("postId") Long postId,
-      @Valid @RequestBody PostRequestDTO.UpdatePost postDto,
-      @AuthenticationPrincipal UserDetailsImpl userDetails) {
-    return postService.updatePost(postId, postDto, userDetails.getUser());
+      @Valid @RequestBody PostRequestDTO.UpdatePost postDto) {
+    return postService.updatePost(postId, postDto);
   }
 
   // 게시글 삭제
-  @DeleteMapping("/post/{postId}")
+  @DeleteMapping("/{postId}")
   public ApiResultDTO<SuccessResponse> deletePost(
-      @PathVariable("postId") Long postId,
-      @AuthenticationPrincipal UserDetailsImpl userDetails) {
-    return postService.deletePost(postId, userDetails.getUser());
+      @PathVariable("postId") Long postId) {
+    return postService.deletePost(postId);
   }
 
   // 선택한 게시물 조회
-  @GetMapping("/posts/{postId}")
+  @GetMapping("/{postId}")
   public ApiResultDTO<PostResponseDTO> getPost(
       @PathVariable("postId") Long postId) {
     return postService.getPost(postId);

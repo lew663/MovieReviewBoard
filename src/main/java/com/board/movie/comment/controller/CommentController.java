@@ -22,27 +22,23 @@ public class CommentController {
   @PostMapping("/comment/{postId}") // 게시글 id
   public ApiResultDTO<CommentResponseDTO> createComment(
       @PathVariable Long postId,
-      @Valid @RequestBody CommentRequestDTO.CreateComment commentDto,
-      @AuthenticationPrincipal UserDetailsImpl userDetails
-  ) {
-    return commentService.createComment(postId, commentDto, userDetails.getUser());
+      @Valid @RequestBody CommentRequestDTO.CreateComment commentDto) {
+    return commentService.createComment(postId, commentDto);
   }
 
   // 댓글 수정
   @PutMapping("/comment/{commentId}") // 댓글 id
   public ApiResultDTO<CommentResponseDTO> updateComment(
       @PathVariable Long commentId,
-      @Valid @RequestBody CommentRequestDTO.CreateComment commentDto, // create DTO와 동일해서 따로 추가안함
-      @AuthenticationPrincipal UserDetailsImpl userDetails
+      @Valid @RequestBody CommentRequestDTO.CreateComment commentDto // create DTO와 동일해서 따로 추가안
   ) {
-    return commentService.updateComment(commentId, commentDto, userDetails.getUser());
+    return commentService.updateComment(commentId, commentDto);
   }
 
   // 댓글 삭제
   @DeleteMapping("/comment/{commentId}")
   public ApiResultDTO<SuccessResponse> deleteComment(
-      @PathVariable Long commentId,
-      @AuthenticationPrincipal UserDetailsImpl userDetails) {
-    return commentService.deleteComment(commentId, userDetails.getUser());
+      @PathVariable Long commentId) {
+    return commentService.deleteComment(commentId);
   }
 }
